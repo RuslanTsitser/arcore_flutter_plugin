@@ -143,7 +143,7 @@ class ArCoreController {
     return _channel.invokeMethod('addArCoreNode', params);
   }
 
-  Future<Vector3> _getCameraPosition() async {
+  Future<Vector3> getCameraPosition() async {
     final result = await _channel.invokeMethod('getCameraPosition');
     final position = result as Map<String, dynamic>;
     final x = position['x']?.toDouble() ?? 0.0;
