@@ -475,16 +475,18 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
     }
      fun getCameraPosition(): List<Double>? {
         // Assuming you have an ArSceneView instance (arSceneView)
-        val arFrame = arSceneView.arFrame ?: return null
+        val arFrame = arSceneView?.arFrame ?: return null
         val camera = arFrame.camera
         val pose = camera.pose
         return listOf(pose.tx().toDouble(), pose.ty().toDouble(), pose.tz().toDouble())
     }
-    fun getNodePosition(name: String): Vector3{
-     val Node? node = arSceneView?.scene?.findByName(name);
-     return node.worldPosition
+    fun getNodePosition(name: String): List<Double>? {
+        val node: Node? = arSceneView?.scene?.findByName(name)
+        val worldPosition = node?.worldPosition ?: return null
 
+        return listOf(worldPosition.x.toDouble(), worldPosition.y.toDouble(), worldPosition.z.toDouble())
     }
+
 
     fun attachNodeToParent(node: Node?, parentNodeName: String?) {
         if (parentNodeName != null) {
