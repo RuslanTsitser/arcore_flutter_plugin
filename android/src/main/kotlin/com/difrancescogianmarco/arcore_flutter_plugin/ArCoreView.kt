@@ -195,9 +195,12 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
 
             }
             "getCameraPosition" -> {
-                val cameraPosition: Point = getCameraPosition()
-                val positionMap = hashMapOf("x" to cameraPosition.x, "y" to cameraPosition.y)
-                result.success(positionMap)
+                val cameraPosition = getCameraPosition()
+                if (cameraPosition != null) {
+                    result.success(cameraPosition)
+                } else {
+                    result.error("UNAVAILABLE", "Could not fetch camera position.", null)
+                }
             }
             "getNodePosition" -> {
                 val name = call.arguments as String 
@@ -470,13 +473,12 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
         }
         result?.success(null)
     }
-    fun getCameraPosition(): Point {
-        val frame: Frame = arSceneView.arFrame ?: return Point(0,0) // Handle potential null frame
-        val camera:  = frame.camera
-
-        // Project the 3D camera position into the 2D screen space
-        val view =  arSceneView
-        return view.projectPoint(camera.pose)
+     fun getCameraPosition(): List<Double>? {
+        // Assuming you have an ArSceneView instance (arSceneView)
+        val arFrame = arSceneView.arFrame ?: return null
+        val camera = arFrame.camera
+        val pose = camera.pose
+        return listOf(pose.tx().toDouble(), pose.ty().toDouble(), pose.tz().toDouble())
     }
     fun getNodePosition(name: String): Vector3{
      val Node? node =   arSceneView?.scene?.findByName(name)

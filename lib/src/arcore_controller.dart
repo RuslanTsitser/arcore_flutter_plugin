@@ -145,10 +145,10 @@ class ArCoreController {
 
   Future<Vector3> getCameraPosition() async {
     final result = await _channel.invokeMethod('getCameraPosition');
-    final position = result as Map<String, dynamic>;
-    final x = position['x']?.toDouble() ?? 0.0;
-    final y = position['y']?.toDouble() ?? 0.0;
-    final z = position['z']?.toDouble() ?? 0.0;
+    
+    final x = result[0]?.toDouble() ?? 0.0;
+    final y = result[1]?.toDouble() ?? 0.0;
+    final z = result[2]?.toDouble() ?? 0.0;
 
     final cameraPositionVector = Vector3(x, y, z);
     return cameraPositionVector;
