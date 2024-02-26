@@ -481,7 +481,7 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
         return listOf(pose.tx().toDouble(), pose.ty().toDouble(), pose.tz().toDouble())
     }
     fun getNodePosition(name: String): Vector3{
-     val Node? node =   arSceneView?.scene?.findByName(name)
+     val Node? node = arSceneView?.scene?.findByName(name);
      return node.worldPosition
 
     }
