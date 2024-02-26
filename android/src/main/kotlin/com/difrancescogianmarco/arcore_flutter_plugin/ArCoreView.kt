@@ -183,7 +183,7 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                 debugLog(" addArCoreNode")
                 val map = call.arguments as HashMap<String, Any>
                 val flutterNode = FlutterArCoreNode(map)
-                addNodeWithAnchor(flutterNode, result)
+                 addNodeWithAnchor(flutterNode, result)
             }
             "removeARCoreNode" -> {
                 debugLog(" removeARCoreNode")
@@ -194,6 +194,11 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                 debugLog(" positionChanged")
 
             }
+            "getCameraPosition" -> {
+                val cameraPosition: Point = getCameraPosition() 
+                val positionMap = hashMapOf("x" to cameraPosition.x, "y" to cameraPosition.y)
+                result.success(positionMap)
+            } 
             "rotationChanged" -> {
                 debugLog(" rotationChanged")
                 updateRotation(call, result)
@@ -434,7 +439,14 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             result.success(null)
         }
     }
-
+    fun getCameraPosition(): Point {
+        val frame: Frame = arFragment.arSceneView.arFrame ?: return Point(0,0) // Handle potential null frame
+        val camera: Camera = frame.camera
+    
+        // Project the 3D camera position into the 2D screen space
+        val view =  arFragment.arSceneView
+        return view.projectPoint(camera.pose)
+    }
     fun onAddNode(flutterArCoreNode: FlutterArCoreNode, result: MethodChannel.Result?) {
 
         debugLog(flutterArCoreNode.toString())

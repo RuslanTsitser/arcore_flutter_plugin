@@ -3,6 +3,7 @@ import 'package:arcore_flutter_plugin/src/arcore_rotating_node.dart';
 import 'package:arcore_flutter_plugin/src/utils/vector_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 import 'arcore_hit_test_result.dart';
 import 'arcore_node.dart';
@@ -140,6 +141,19 @@ class ArCoreController {
     }
     _addListeners(node);
     return _channel.invokeMethod('addArCoreNode', params);
+  }
+
+  Future<Vector3> _getCameraPosition() async {
+    final result = await _channel.invokeMethod('getCameraPosition');
+    final position = result as Map<String, dynamic>;
+    final x = position['x']?.toDouble() ?? 0.0;
+    final y = position['y']?.toDouble() ?? 0.0;
+    final z = position['z']?.toDouble() ?? 0.0;
+
+    final cameraPositionVector = Vector3(x, y, z);
+    return cameraPositionVector;
+
+    // Handle errors
   }
 
   Future<dynamic> togglePlaneRenderer() async {
