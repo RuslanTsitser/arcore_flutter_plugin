@@ -444,14 +444,6 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             result.success(null)
         }
     }
-    fun getCameraPosition(): Point {
-        val frame: Frame = arSceneView.arFrame ?: return Point(0,0) // Handle potential null frame
-        val camera:  = frame.camera
-
-        // Project the 3D camera position into the 2D screen space
-        val view =  arSceneView
-        return view.projectPoint(camera.pose)
-    }
     fun onAddNode(flutterArCoreNode: FlutterArCoreNode, result: MethodChannel.Result?) {
 
         debugLog(flutterArCoreNode.toString())
@@ -477,6 +469,14 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
 
         }
         result?.success(null)
+    }
+    fun getCameraPosition(): Point {
+        val frame: Frame = arSceneView.arFrame ?: return Point(0,0) // Handle potential null frame
+        val camera:  = frame.camera
+
+        // Project the 3D camera position into the 2D screen space
+        val view =  arSceneView
+        return view.projectPoint(camera.pose)
     }
     fun getNodePosition(name: String): Vector3{
      val Node? node =   arSceneView?.scene?.findByName(name)
