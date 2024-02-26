@@ -204,7 +204,7 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             }
             "getNodePosition" -> {
                 val name = call.arguments as String 
-                
+
                 result.success(getNodePosition(name))
             }
             "rotationChanged" -> {

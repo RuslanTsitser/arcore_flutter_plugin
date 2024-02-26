@@ -143,8 +143,9 @@ class ArCoreController {
     return _channel.invokeMethod('addArCoreNode', params);
   }
 
-  Future<Vector3> getCameraPosition() async {
-    final result = await _channel.invokeMethod('getCameraPosition');
+  Vector3 getCameraPosition() {
+    final List<double> result =
+        _channel.invokeMethod('getCameraPosition') as List<double>;
 
     final x = result[0]?.toDouble() ?? 0.0;
     final y = result[1]?.toDouble() ?? 0.0;
@@ -156,11 +157,12 @@ class ArCoreController {
     // Handle errors
   }
 
-  Future<Vector3> getNodePosition({required String name}) async {
-    final result = await _channel.invokeMethod('getNodePosition', name);
-    final x = result[0]?.toDouble() ?? 0.0;
-    final y = result[1]?.toDouble() ?? 0.0;
-    final z = result[2]?.toDouble() ?? 0.0;
+  Vector3 getNodePosition({required String name}) {
+    final List<double> result =
+        _channel.invokeMethod('getNodePosition', name) as List<double>;
+    final x = result[0].toDouble() ?? 0.0;
+    final y = result[1].toDouble() ?? 0.0;
+    final z = result[2].toDouble() ?? 0.0;
 
     final cameraPositionVector = Vector3(x, y, z);
     return cameraPositionVector;
