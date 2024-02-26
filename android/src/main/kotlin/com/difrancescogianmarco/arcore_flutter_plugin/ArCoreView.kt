@@ -195,10 +195,15 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
 
             }
             "getCameraPosition" -> {
-                val cameraPosition: Point = getCameraPosition() 
+                val cameraPosition: Point = getCameraPosition()
                 val positionMap = hashMapOf("x" to cameraPosition.x, "y" to cameraPosition.y)
                 result.success(positionMap)
-            } 
+            }
+            "getNodePosition" -> {
+                val name = call.arguments as String 
+                
+                result.success(getNodePosition(name))
+            }
             "rotationChanged" -> {
                 debugLog(" rotationChanged")
                 updateRotation(call, result)
@@ -441,8 +446,8 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
     }
     fun getCameraPosition(): Point {
         val frame: Frame = arSceneView.arFrame ?: return Point(0,0) // Handle potential null frame
-        val camera: Camera = frame.camera
-    
+        val camera:  = frame.camera
+
         // Project the 3D camera position into the 2D screen space
         val view =  arSceneView
         return view.projectPoint(camera.pose)
@@ -472,6 +477,11 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
 
         }
         result?.success(null)
+    }
+    fun getNodePosition(name: String): Vector3{
+     val Node? node =   arSceneView?.scene?.findByName(name)
+     return node.worldPosition
+
     }
 
     fun attachNodeToParent(node: Node?, parentNodeName: String?) {

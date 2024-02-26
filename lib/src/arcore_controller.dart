@@ -156,6 +156,22 @@ class ArCoreController {
     // Handle errors
   }
 
+  Future<Vector3> getNodePosition({required String name}) async {
+    final result = await _channel.invokeMethod(
+      'getNodePosition',
+      name
+    );
+    final position = result as Map<String, dynamic>;
+    final x = position['x']?.toDouble() ?? 0.0;
+    final y = position['y']?.toDouble() ?? 0.0;
+    final z = position['z']?.toDouble() ?? 0.0;
+
+    final cameraPositionVector = Vector3(x, y, z);
+    return cameraPositionVector;
+
+    // Handle errors
+  }
+
   Future<dynamic> togglePlaneRenderer() async {
     return _channel.invokeMethod('togglePlaneRenderer');
   }
