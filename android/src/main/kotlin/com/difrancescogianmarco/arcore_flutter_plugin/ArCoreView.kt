@@ -440,11 +440,11 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
         }
     }
     fun getCameraPosition(): Point {
-        val frame: Frame = arFragment.arSceneView.arFrame ?: return Point(0,0) // Handle potential null frame
+        val frame: Frame = arSceneView.arFrame ?: return Point(0,0) // Handle potential null frame
         val camera: Camera = frame.camera
     
         // Project the 3D camera position into the 2D screen space
-        val view =  arFragment.arSceneView
+        val view =  arSceneView
         return view.projectPoint(camera.pose)
     }
     fun onAddNode(flutterArCoreNode: FlutterArCoreNode, result: MethodChannel.Result?) {
