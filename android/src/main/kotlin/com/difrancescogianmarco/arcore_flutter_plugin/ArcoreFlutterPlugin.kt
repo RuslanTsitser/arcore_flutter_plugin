@@ -1,14 +1,11 @@
 package com.difrancescogianmarco.arcore_flutter_plugin
 
-import androidx.annotation.NonNull
-import androidx.annotation.Nullable
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 
 class ArcoreFlutterPlugin : FlutterPlugin, ActivityAware {
 
-    @Nullable
     private var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null
     
     private var methodCallHandler: MethodCallHandlerImpl? = null
@@ -18,7 +15,7 @@ class ArcoreFlutterPlugin : FlutterPlugin, ActivityAware {
         private const val CHANNEL_NAME = "arcore_flutter_plugin"
     }
 
-    override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+    override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         this.flutterPluginBinding = flutterPluginBinding
     }
 
@@ -28,7 +25,7 @@ class ArcoreFlutterPlugin : FlutterPlugin, ActivityAware {
 
 
     override fun onDetachedFromActivity() {
-        //TODO remove othen channel
+        //TODO remove other channel
         methodCallHandler?.stopListening()
         methodCallHandler = null
     }
@@ -39,8 +36,7 @@ class ArcoreFlutterPlugin : FlutterPlugin, ActivityAware {
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         flutterPluginBinding?.platformViewRegistry?.registerViewFactory(CHANNEL_NAME, ArCoreViewFactory(binding.activity, flutterPluginBinding?.binaryMessenger!!))
-        methodCallHandler = MethodCallHandlerImpl(
-                binding.activity, flutterPluginBinding?.binaryMessenger!!)
+        methodCallHandler = MethodCallHandlerImpl(binding.activity, flutterPluginBinding?.binaryMessenger!!)
 
     }
 
