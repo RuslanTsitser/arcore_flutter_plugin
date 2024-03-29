@@ -63,13 +63,11 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             }
 
             val updatedAugmentedImages = frame.getUpdatedTrackables(AugmentedImage::class.java)
-            debugLog("length ${updatedAugmentedImages.size}")
             for (augmentedImage in updatedAugmentedImages) {
                 debugLog( "${augmentedImage.name} ${augmentedImage.trackingMethod}")
-                if (augmentedImage.trackingState == TrackingState.TRACKING) {
-                    if (!augmentedImageMap.containsKey(augmentedImage.index)) {
+                if (!augmentedImageMap.containsKey(augmentedImage.index)) {
+                    if (augmentedImage.trackingState == TrackingState.TRACKING) {
                         debugLog("${augmentedImage.name} ASSENT")
-
                         val centerPoseAnchor = augmentedImage.createAnchor(augmentedImage.centerPose)
                         val anchorNode = AnchorNode(centerPoseAnchor)
                         augmentedImageMap[augmentedImage.index] = Pair(augmentedImage, anchorNode)
@@ -261,6 +259,8 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
     private fun onLoadSingleImageOnDb(call: MethodCall, result: MethodChannel.Result) {
         debugLog("on load_single_image_on_db")
         try {
+            // clear augmentedImageMap
+            augmentedImageMap.clear()
             val map = call.arguments as java.util.HashMap<*, *>
             val bytes = map["bytes"] as? ByteArray
             val session = arSceneView.session ?: return
@@ -337,7 +337,6 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                 return
             }
 
-            // New implementation to handle Image format
             val imageBitmap = imageToBitmap(image)
             val imageBytes = convertBitmapToByteArray(imageBitmap)
             result.success(imageBytes)
@@ -359,7 +358,6 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
 
         val nv21 = ByteArray(ySize + uSize + vSize)
 
-        // U and V are swapped
         yBuffer.get(nv21, 0, ySize)
         vBuffer.get(nv21, ySize, vSize)
         uBuffer.get(nv21, ySize + vSize, uSize)
