@@ -8,7 +8,7 @@ import com.google.ar.sceneform.Node
 import com.google.ar.sceneform.math.Quaternion
 import com.google.ar.sceneform.math.Vector3
 
-class FlutterArCoreNode(map: HashMap<String, *>) {
+class FlutterArCoreNode(map: HashMap<*, *>) {
 
     val dartType: String = map["dartType"] as String
     val name: String = map["name"] as String

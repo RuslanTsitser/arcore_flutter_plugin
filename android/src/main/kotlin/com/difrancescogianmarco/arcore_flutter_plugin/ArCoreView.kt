@@ -3,17 +3,14 @@ package com.difrancescogianmarco.arcore_flutter_plugin
 import android.app.Activity
 import android.app.Application
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.*
+import android.graphics.ImageFormat
+import android.media.Image
 import android.os.Bundle
-import android.os.Environment
-import android.os.Handler
-import android.os.HandlerThread
 import android.util.Log
 import android.util.Pair
 import android.view.GestureDetector
 import android.view.MotionEvent
-import android.view.PixelCopy
 import android.view.View
 import com.difrancescogianmarco.arcore_flutter_plugin.flutter_models.FlutterArCoreHitTestResult
 import com.difrancescogianmarco.arcore_flutter_plugin.flutter_models.FlutterArCoreNode
@@ -29,9 +26,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.platform.PlatformView
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
+import java.io.ByteArrayOutputStream
 
 class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMessenger, id: Int, private val debug: Boolean) : PlatformView, MethodChannel.MethodCallHandler {
     private val methodChannel: MethodChannel = MethodChannel(messenger, "arcore_flutter_plugin_$id")
@@ -68,19 +63,18 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             }
 
             val updatedAugmentedImages = frame.getUpdatedTrackables(AugmentedImage::class.java)
+            debugLog("length ${updatedAugmentedImages.size}")
             for (augmentedImage in updatedAugmentedImages) {
                 debugLog( "${augmentedImage.name} ${augmentedImage.trackingMethod}")
-                if (!augmentedImageMap.containsKey(augmentedImage.index)) {
-                    debugLog("${augmentedImage.name} ASSENT")
-                    sendAugmentedImageToFlutter(augmentedImage)
-                    if (augmentedImage.trackingMethod == AugmentedImage.TrackingMethod.FULL_TRACKING) {
-                        debugLog("${augmentedImage.name} FULL_TRACKING")
+                if (augmentedImage.trackingState == TrackingState.TRACKING) {
+                    if (!augmentedImageMap.containsKey(augmentedImage.index)) {
+                        debugLog("${augmentedImage.name} ASSENT")
+
                         val centerPoseAnchor = augmentedImage.createAnchor(augmentedImage.centerPose)
-                        val anchorNode = AnchorNode()
-                        anchorNode.anchor = centerPoseAnchor
+                        val anchorNode = AnchorNode(centerPoseAnchor)
                         augmentedImageMap[augmentedImage.index] = Pair(augmentedImage, anchorNode)
                         arSceneView.scene.addChild(anchorNode)
-
+                        sendAugmentedImageToFlutter(augmentedImage)
                     }
                 }
 
@@ -166,26 +160,26 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                 arSceneViewInit(call, result)
             }
             "load_single_image_on_db" -> {
-                debugLog( "load_single_image_on_db")
-                val map = call.arguments as java.util.HashMap<*, *>
-                val singleImageBytes = map["bytes"] as? ByteArray
-                updateSession(singleImageBytes)
+                onLoadSingleImageOnDb(call, result)
+            }
+            "attachObjectToAugmentedImage" -> {
+                onAttachObjectToAugmentedImage(call, result)
             }
             "addArCoreNode" -> {
                 debugLog(" addArCoreNode")
-                val map = call.arguments as HashMap<String, Any>
+                val map = call.arguments as HashMap<*, *>
                 val flutterNode = FlutterArCoreNode(map)
                 onAddNode(flutterNode, result)
             }
             "addArCoreNodeWithAnchor" -> {
                 debugLog(" addArCoreNode")
-                val map = call.arguments as HashMap<String, Any>
+                val map = call.arguments as HashMap<*, *>
                 val flutterNode = FlutterArCoreNode(map)
                  addNodeWithAnchor(flutterNode, result)
             }
             "removeARCoreNode" -> {
                 debugLog(" removeARCoreNode")
-                val map = call.arguments as HashMap<String, Any>
+                val map = call.arguments as HashMap<*, *>
                 removeNode(map["nodeName"] as String, result)
             }
             "positionChanged" -> {
@@ -214,9 +208,8 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                 updateMaterials(call, result)
 
             }
-            "takeScreenshot" -> {
-                debugLog(" takeScreenshot")
-                takeScreenshot(result)
+            "takePicture" -> {
+                onTakePicture(result)
             }
             "dispose" -> {
                 debugLog("Disposing ARCore now")
@@ -243,9 +236,33 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
         }
     }
 
-    private fun updateSession(bytes: ByteArray?) {
-        debugLog( "setupSession()")
+    private fun onAttachObjectToAugmentedImage(call: MethodCall, result: MethodChannel.Result) {
+        debugLog( "on attachObjectToAugmentedImage")
+        val map = call.arguments as java.util.HashMap<*, *>
+        val flutterArCoreNode = FlutterArCoreNode(map["node"] as java.util.HashMap<*, *>)
+        val index = map["index"] as Int
+        if (augmentedImageMap.containsKey(index)) {
+            val anchorNode = augmentedImageMap[index]!!.second
+            NodeFactory.makeNode(activity.applicationContext, flutterArCoreNode, debug) { node, throwable ->
+                debugLog( "inserted ${node?.name}")
+                if (node != null) {
+                    node.setParent(anchorNode)
+                    arSceneView.scene?.addChild(anchorNode)
+                    result.success(null)
+                } else if (throwable != null) {
+                    result.error("attachObjectToAugmentedImage error", throwable.localizedMessage, null)
+                }
+            }
+        } else {
+            result.error("attachObjectToAugmentedImage error", "Augmented image there isn't ona hashmap", null)
+        }
+    }
+
+    private fun onLoadSingleImageOnDb(call: MethodCall, result: MethodChannel.Result) {
+        debugLog("on load_single_image_on_db")
         try {
+            val map = call.arguments as java.util.HashMap<*, *>
+            val bytes = map["bytes"] as? ByteArray
             val session = arSceneView.session ?: return
             val config = Config(session)
             config.focusMode = Config.FocusMode.AUTO
@@ -256,8 +273,10 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                     }
             }
             session.configure(config)
+            result.success(null)
         } catch (ex: Exception) {
             ex.localizedMessage?.let { debugLog(it) }
+            result.error("load_single_image_on_db error", ex.localizedMessage, null)
         }
     }
 
@@ -309,46 +328,54 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
         }
     }
 
-    private fun takeScreenshot(result: MethodChannel.Result) {
+    private fun onTakePicture(result: MethodChannel.Result) {
         try {
-            // Create a bitmap the size of the scene view.
-            val bitmap: Bitmap = Bitmap.createBitmap(/* width = */ arSceneView.width, /* height = */
-                arSceneView.height,
-                /* config = */
-                Bitmap.Config.ARGB_8888)
+            debugLog("on takePicture")
+            val image: Image? = arSceneView.arFrame?.acquireCameraImage()
+            if (image == null) {
+                result.error("takePicture error", "Image is null", null)
+                return
+            }
 
-
-            val handlerThread = HandlerThread("PixelCopier")
-            handlerThread.start()
-
-            PixelCopy.request(arSceneView, bitmap, { copyResult ->
-                if (copyResult == PixelCopy.SUCCESS) {
-                    try {
-                        saveBitmapToDisk(bitmap)
-                    } catch (e: IOException) {
-                        e.printStackTrace()
-                    }
-                }
-                handlerThread.quitSafely()
-            }, Handler(handlerThread.looper))
-
-        } catch (e: Throwable) {
-            e.printStackTrace()
+            // New implementation to handle Image format
+            val imageBitmap = imageToBitmap(image)
+            val imageBytes = convertBitmapToByteArray(imageBitmap)
+            result.success(imageBytes)
+            image.close()
+        } catch (e: Exception) {
+            result.error("takePicture error", e.localizedMessage, null)
         }
-        result.success(null)
     }
 
-    @Throws(IOException::class)
-    fun saveBitmapToDisk(bitmap: Bitmap):String {
-        val now = "rawScreenshot"
-        val mPath: String =  Environment.getExternalStorageDirectory().toString() + "/DCIM/" + now + ".jpg"
-        val mediaFile = File(mPath)
-        debugLog(mediaFile.toString())
-        val fileOutputStream = FileOutputStream(mediaFile)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
-        fileOutputStream.flush()
-        fileOutputStream.close()
-        return mPath
+    private fun imageToBitmap(image: Image): Bitmap {
+        val planes = image.planes
+        val yBuffer = planes[0].buffer
+        val uBuffer = planes[1].buffer
+        val vBuffer = planes[2].buffer
+
+        val ySize = yBuffer.remaining()
+        val uSize = uBuffer.remaining()
+        val vSize = vBuffer.remaining()
+
+        val nv21 = ByteArray(ySize + uSize + vSize)
+
+        // U and V are swapped
+        yBuffer.get(nv21, 0, ySize)
+        vBuffer.get(nv21, ySize, vSize)
+        uBuffer.get(nv21, ySize + vSize, uSize)
+
+        val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
+        val out = ByteArrayOutputStream()
+        yuvImage.compressToJpeg(Rect(0, 0, yuvImage.width, yuvImage.height), 100, out)
+        val imageBytes = out.toByteArray()
+
+        return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+    }
+
+    private fun convertBitmapToByteArray(bitmap: Bitmap): ByteArray {
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        return outputStream.toByteArray()
     }
 
     private fun arSceneViewInit(call: MethodCall, result: MethodChannel.Result) {
@@ -385,7 +412,6 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
     }
 
     private fun addNodeWithAnchor(flutterArCoreNode: FlutterArCoreNode, result: MethodChannel.Result) {
-
         RenderableCustomFactory.makeRenderable(activity.applicationContext, flutterArCoreNode) { renderable, t ->
             if (t != null) {
                 result.error("Make Renderable Error", t.localizedMessage, null)
@@ -560,3 +586,4 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
         }
     }
 }
+

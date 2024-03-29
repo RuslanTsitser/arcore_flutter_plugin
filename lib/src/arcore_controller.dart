@@ -28,14 +28,13 @@ class ArCoreController {
     return arcoreInstalled;
   }
 
-  ArCoreController(
-      {required this.id,
-      this.enableTapRecognizer,
-      this.enablePlaneRenderer,
-      this.enableUpdateListener,
-      this.debug = false
-//    @required this.onUnsupported,
-      }) {
+  ArCoreController({
+    required this.id,
+    this.enableTapRecognizer,
+    this.enablePlaneRenderer,
+    this.enableUpdateListener,
+    this.debug = false,
+  }) {
     _channel = MethodChannel('arcore_flutter_plugin_$id');
     _channel.setMethodCallHandler(_handleMethodCalls);
     init();
@@ -171,7 +170,7 @@ class ArCoreController {
     return _channel.invokeMethod('getTrackingState');
   }
 
-  addArCoreNodeToAugmentedImage(ArCoreNode node, int index, {String? parentNodeName}) {
+  Future<void> addArCoreNodeToAugmentedImage(ArCoreNode node, int index, {String? parentNodeName}) {
     final params = _addParentNodeNameToParams(node.toMap(), parentNodeName);
     return _channel.invokeMethod('attachObjectToAugmentedImage', {'index': index, 'node': params});
   }
@@ -229,6 +228,10 @@ class ArCoreController {
     return _channel.invokeMethod('load_single_image_on_db', {
       'bytes': bytes,
     });
+  }
+
+  Future<Uint8List> takePicture() async {
+    return await _channel.invokeMethod('takePicture');
   }
 
   Future<void> loadMultipleAugmentedImage({@required Map<String, Uint8List>? bytesMap}) {
