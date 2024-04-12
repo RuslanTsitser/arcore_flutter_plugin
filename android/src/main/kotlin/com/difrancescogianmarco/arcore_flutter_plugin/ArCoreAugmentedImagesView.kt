@@ -23,7 +23,6 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.util.*
-import com.google.ar.core.exceptions.*
 import com.google.ar.core.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
@@ -43,7 +42,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
 
     init {
 
-        sceneUpdateListener = Scene.OnUpdateListener { frameTime ->
+        sceneUpdateListener = Scene.OnUpdateListener { _ ->
 
             val frame = arSceneView?.arFrame ?: return@OnUpdateListener
 
@@ -137,7 +136,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
             when (call.method) {
                 "init" -> {
                     debugLog( "INIT AUGMENTED IMAGES")
-                    arScenViewInit(call, result)
+                    arSceneViewInit(call, result)
                 }
                 "load_single_image_on_db" -> {
                     debugLog( "load_single_image_on_db")
@@ -209,7 +208,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
         }
     }
 
-    private fun arScenViewInit(call: MethodCall, result: MethodChannel.Result) {
+    private fun arSceneViewInit(call: MethodCall, result: MethodChannel.Result) {
         arSceneView?.scene?.addOnUpdateListener(sceneUpdateListener)
         onResume()
         result.success(null)
@@ -261,7 +260,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
         }
     }
 
-    fun setupSession(bytes: ByteArray?, useSingleImage: Boolean) {
+    private fun setupSession(bytes: ByteArray?, useSingleImage: Boolean) {
         debugLog( "setupSession()")
         try {
             val session = arSceneView?.session ?: return
@@ -282,11 +281,11 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
             session.configure(config)
             arSceneView?.setupSession(session)
         } catch (ex: Exception) {
-            debugLog( ex.localizedMessage)
+            ex.localizedMessage?.let { debugLog(it) }
         }
     }
 
-    fun setupSession(bytesMap: Map<String, ByteArray>?) {
+    private fun setupSession(bytesMap: Map<String, ByteArray>?) {
         debugLog( "setupSession()")
         try {
             val session = arSceneView?.session ?: return
@@ -297,7 +296,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
                 addMultipleImagesToAugmentedImageDatabase(config, bytesMap, session)
             }
         } catch (ex: Exception) {
-            debugLog( ex.localizedMessage)
+            ex.localizedMessage?.let { debugLog(it) }
         }
     }
 
@@ -313,10 +312,11 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
                         augmentedImageDatabase.addImage(key, augmentedImageBitmap)
                     } catch (ex: Exception) {
                         debugLog("Image with the title $key cannot be added to the database. " +
-                        "The exception was thrown: " + ex?.toString())
+                        "The exception was thrown: " + ex.toString()
+                        )
                     }
                 }
-                if (augmentedImageDatabase?.getNumImages() == 0) {
+                if (augmentedImageDatabase.getNumImages() == 0) {
                     throw Exception("Could not setup augmented image database")
                 }
                 config.augmentedImageDatabase = augmentedImageDatabase
@@ -336,7 +336,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
             config.augmentedImageDatabase = augmentedImageDatabase
             return true
         } catch (ex:Exception) {
-            debugLog(ex.localizedMessage)
+            ex.localizedMessage?.let { debugLog(it) }
             return false
         }
     }
@@ -354,13 +354,13 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
         }
     }
 
-    private fun loadAugmentedImageBitmap(bitmapdata: ByteArray): Bitmap? {
+    private fun loadAugmentedImageBitmap(bitmapData: ByteArray): Bitmap? {
         debugLog( "loadAugmentedImageBitmap")
-       try {
-           return  BitmapFactory.decodeByteArray(bitmapdata, 0, bitmapdata.size)
+        return try {
+            BitmapFactory.decodeByteArray(bitmapData, 0, bitmapData.size)
         } catch (e: Exception) {
             Log.e(TAG, "IO exception loading augmented image bitmap.", e)
-            return  null
+            null
         }
     }
 }
