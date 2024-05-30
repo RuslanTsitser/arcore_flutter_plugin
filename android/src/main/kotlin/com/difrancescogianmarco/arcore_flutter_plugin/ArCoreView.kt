@@ -79,8 +79,8 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                             val anchorNode = AnchorNode()
                             anchorNode.anchor = centerPoseAnchor
                             augmentedImageMap[augmentedImage.index] = Pair.create(augmentedImage, anchorNode)
+                            sendAugmentedImageToFlutter(augmentedImage)
                         }
-                        sendAugmentedImageToFlutter(augmentedImage)
                     }
 
                     TrackingState.STOPPED -> {
