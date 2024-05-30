@@ -275,8 +275,7 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                         }
                     }
                     node.setParent(anchorNode)
-                    arSceneView.scene?.addChild(anchorNode)
-                    arSceneView.scene.addChild(node)
+                    arSceneView.scene?.addChild(node)
                     result.success(null)
                 } else if (throwable != null) {
                     result.error("attachObjectToAugmentedImage error", throwable.localizedMessage, null)
