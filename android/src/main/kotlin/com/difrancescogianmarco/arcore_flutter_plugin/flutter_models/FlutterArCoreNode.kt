@@ -16,13 +16,13 @@ class FlutterArCoreNode(map: HashMap<*, *>) {
     val objectUrl: String? = map["objectUrl"] as? String
     val object3DFileName: String? = map["object3DFileName"] as? String
     val shape: FlutterArCoreShape? = getShape(map["shape"] as? HashMap<String, *>)
-    private val position: Vector3 = parseVector3(map["position"] as? HashMap<String, *>) ?: Vector3()
-    private val scale: Vector3 = parseVector3(map["scale"] as? HashMap<String, *>)
+    val position: Vector3 = parseVector3(map["position"] as? HashMap<String, *>) ?: Vector3()
+    val scale: Vector3 = parseVector3(map["scale"] as? HashMap<String, *>)
             ?: Vector3(1.0F, 1.0F, 1.0F)
-    private val rotation: Quaternion = parseQuaternion(map["rotation"] as? HashMap<String, Double>)
+    val rotation: Quaternion = parseQuaternion(map["rotation"] as? HashMap<String, Double>)
             ?: Quaternion()
-    private val degreesPerSecond: Float? = getDegreesPerSecond((map["degreesPerSecond"] as? Double))
-    private val parentNodeName: String? = map["parentNodeName"] as? String
+    val degreesPerSecond: Float? = getDegreesPerSecond((map["degreesPerSecond"] as? Double))
+    val parentNodeName: String? = map["parentNodeName"] as? String
     val withShadows: Boolean = map["withShadows"] as? Boolean ?: true
 
     val children: ArrayList<FlutterArCoreNode> = getChildrenFromMap(map["children"] as ArrayList<HashMap<String, *>>)
