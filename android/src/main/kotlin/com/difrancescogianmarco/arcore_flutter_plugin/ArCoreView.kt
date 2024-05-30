@@ -64,15 +64,33 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
 
             val updatedAugmentedImages = frame.getUpdatedTrackables(AugmentedImage::class.java)
             for (augmentedImage in updatedAugmentedImages) {
-                debugLog( "${augmentedImage.name} ${augmentedImage.trackingMethod}")
-                if (!augmentedImageMap.containsKey(augmentedImage.index)) {
-                    if (augmentedImage.trackingState == TrackingState.TRACKING) {
-                        debugLog("${augmentedImage.name} ASSENT")
-                        val centerPoseAnchor = augmentedImage.createAnchor(augmentedImage.centerPose)
-                        val anchorNode = AnchorNode(centerPoseAnchor)
-                        augmentedImageMap[augmentedImage.index] = Pair(augmentedImage, anchorNode)
-                        arSceneView.scene.addChild(anchorNode)
+                if (augmentedImageTrackingMethodMap[augmentedImage.index] != augmentedImage.trackingMethod) {
+                    augmentedImageTrackingMethodMap[augmentedImage.index] = augmentedImage.trackingMethod
+                    debugLog( "${augmentedImage.name} ${augmentedImage.trackingMethod}")
+                }
+                when (augmentedImage.trackingState) {
+                    TrackingState.PAUSED -> {
+                        debugLog( "Detected Image ${augmentedImage.name} PAUSED")
+                    }
+
+                    TrackingState.TRACKING -> {
+                        if (!augmentedImageMap.containsKey(augmentedImage.index)) {
+                            val centerPoseAnchor = augmentedImage.createAnchor(augmentedImage.centerPose)
+                            val anchorNode = AnchorNode()
+                            anchorNode.anchor = centerPoseAnchor
+                            augmentedImageMap[augmentedImage.index] = Pair.create(augmentedImage, anchorNode)
+                        }
                         sendAugmentedImageToFlutter(augmentedImage)
+                    }
+
+                    TrackingState.STOPPED -> {
+                        val anchorNode = augmentedImageMap[augmentedImage.index]!!.second
+                        augmentedImageMap.remove(augmentedImage.index)
+                        arSceneView.scene?.removeChild(anchorNode)
+                        debugLog( "Detected Image ${augmentedImage.name} STOPPED")
+                    }
+
+                    else -> {
                     }
                 }
 
@@ -131,6 +149,8 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
     }
 
     private val augmentedImageMap = java.util.HashMap<Int, Pair<AugmentedImage, AnchorNode>>()
+    private val augmentedImageTrackingMethodMap = java.util.HashMap<Int, AugmentedImage.TrackingMethod>()
+
 
     private fun sendAugmentedImageToFlutter(augmentedImage: AugmentedImage) {
         val map: java.util.HashMap<String, Any> = java.util.HashMap<String, Any>()
@@ -263,12 +283,13 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             augmentedImageMap.clear()
             val map = call.arguments as java.util.HashMap<*, *>
             val bytes = map["bytes"] as? ByteArray
+            val imageWidth = map["imageWidth"] as? Float
             val session = arSceneView.session ?: return
             val config = Config(session)
             config.focusMode = Config.FocusMode.AUTO
             config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
             bytes?.let {
-                    if (!addImageToAugmentedImageDatabase(config, bytes)) {
+                    if (!addImageToAugmentedImageDatabase(config, bytes, imageWidth)) {
                         throw Exception("Could not setup augmented image database")
                     }
             }
@@ -280,12 +301,16 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
         }
     }
 
-    private fun addImageToAugmentedImageDatabase(config: Config, bytes: ByteArray): Boolean {
+    private fun addImageToAugmentedImageDatabase(config: Config, bytes: ByteArray, imageWidth : Float?): Boolean {
         debugLog( "addImageToAugmentedImageDatabase")
         try {
             val augmentedImageBitmap = loadAugmentedImageBitmap(bytes) ?: return false
             val augmentedImageDatabase = AugmentedImageDatabase(arSceneView.session)
-            augmentedImageDatabase.addImage("image_name", augmentedImageBitmap)
+            if (imageWidth == null) {
+                augmentedImageDatabase.addImage("image_name", augmentedImageBitmap)
+            } else {
+                augmentedImageDatabase.addImage("image_name", augmentedImageBitmap, imageWidth)
+            }
             config.augmentedImageDatabase = augmentedImageDatabase
             return true
         } catch (ex:Exception) {
