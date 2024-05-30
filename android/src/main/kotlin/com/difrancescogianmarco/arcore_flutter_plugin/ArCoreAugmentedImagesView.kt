@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.util.*
 import com.google.ar.core.*
+import com.google.ar.core.AugmentedImage.TrackingMethod
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
@@ -35,8 +36,9 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
     // the
     // database.
     private val augmentedImageMap = HashMap<Int, Pair<AugmentedImage, AnchorNode>>()
+    private val augmentedImageTrackingMethodMap = HashMap<Int, TrackingMethod>()
 
-    private var job: Job = Job()
+    private val job: Job = Job()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Main + job
 
@@ -54,32 +56,30 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
             val updatedAugmentedImages = frame.getUpdatedTrackables(AugmentedImage::class.java)
 
             for (augmentedImage in updatedAugmentedImages) {
+                if (augmentedImageTrackingMethodMap[augmentedImage.index] != augmentedImage.trackingMethod) {
+                    augmentedImageTrackingMethodMap[augmentedImage.index] = augmentedImage.trackingMethod
+                    debugLog( "${augmentedImage.name} ${augmentedImage.trackingMethod}")
+                }
                 when (augmentedImage.trackingState) {
                     TrackingState.PAUSED -> {
-                        val text = String.format("Detected Image %d", augmentedImage.index)
-                        debugLog( text)
+                        debugLog( "Detected Image ${augmentedImage.name} PAUSED")
                     }
 
                     TrackingState.TRACKING -> {
-                        debugLog( "${augmentedImage.name} ${augmentedImage.trackingMethod}")
                         if (!augmentedImageMap.containsKey(augmentedImage.index)) {
-                            debugLog( "${augmentedImage.name} ASSENTE")
                             val centerPoseAnchor = augmentedImage.createAnchor(augmentedImage.centerPose)
                             val anchorNode = AnchorNode()
                             anchorNode.anchor = centerPoseAnchor
                             augmentedImageMap[augmentedImage.index] = Pair.create(augmentedImage, anchorNode)
                         }
-
                         sendAugmentedImageToFlutter(augmentedImage)
                     }
 
                     TrackingState.STOPPED -> {
-                        debugLog( "STOPPED: ${augmentedImage.name}")
                         val anchorNode = augmentedImageMap[augmentedImage.index]!!.second
                         augmentedImageMap.remove(augmentedImage.index)
                         arSceneView?.scene?.removeChild(anchorNode)
-                        val text = String.format("Removed Image %d", augmentedImage.index)
-                        debugLog( text)
+                        debugLog( "Detected Image ${augmentedImage.name} STOPPED")
                     }
 
                     else -> {
@@ -159,8 +159,8 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
                 }
                 "attachObjectToAugmentedImage" -> {
                     debugLog( "attachObjectToAugmentedImage")
-                    val map = call.arguments as HashMap<String, Any>
-                    val flutterArCoreNode = FlutterArCoreNode(map["node"] as HashMap<String, Any>)
+                    val map = call.arguments as HashMap<*, *>
+                    val flutterArCoreNode = FlutterArCoreNode(map["node"] as HashMap<*, *>)
                     val index = map["index"] as Int
                     if (augmentedImageMap.containsKey(index)) {
 //                        val augmentedImage = augmentedImageMap[index]!!.first
@@ -268,7 +268,6 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
             val config = Config(session)
             config.focusMode = Config.FocusMode.AUTO
             config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
-            config.lightEstimationMode = Config.LightEstimationMode.DISABLED
             bytes?.let {
                 if (useSingleImage) {
                     if (!addImageToAugmentedImageDatabase(config, bytes, imageWidth)) {
