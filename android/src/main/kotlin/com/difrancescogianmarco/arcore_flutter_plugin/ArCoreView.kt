@@ -68,25 +68,18 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                     augmentedImageTrackingMethodMap[augmentedImage.index] = augmentedImage.trackingMethod
                     debugLog( "${augmentedImage.name} ${augmentedImage.trackingMethod}")
                 }
+                if (!augmentedImageMap.containsKey(augmentedImage.index)) {
+                    val centerPoseAnchor = augmentedImage.createAnchor(augmentedImage.centerPose)
+                    val anchorNode = AnchorNode()
+                    anchorNode.anchor = centerPoseAnchor
+                    augmentedImageMap[augmentedImage.index] = Pair.create(augmentedImage, anchorNode)
+                    sendAugmentedImageToFlutter(augmentedImage)
+                }
                 when (augmentedImage.trackingState) {
                     TrackingState.PAUSED -> {
-                        if (!augmentedImageMap.containsKey(augmentedImage.index)) {
-                            val centerPoseAnchor = augmentedImage.createAnchor(augmentedImage.centerPose)
-                            val anchorNode = AnchorNode()
-                            anchorNode.anchor = centerPoseAnchor
-                            augmentedImageMap[augmentedImage.index] = Pair.create(augmentedImage, anchorNode)
-                            sendAugmentedImageToFlutter(augmentedImage)
-                        }
                     }
 
                     TrackingState.TRACKING -> {
-                        if (!augmentedImageMap.containsKey(augmentedImage.index)) {
-                            val centerPoseAnchor = augmentedImage.createAnchor(augmentedImage.centerPose)
-                            val anchorNode = AnchorNode()
-                            anchorNode.anchor = centerPoseAnchor
-                            augmentedImageMap[augmentedImage.index] = Pair.create(augmentedImage, anchorNode)
-                            sendAugmentedImageToFlutter(augmentedImage)
-                        }
                     }
 
                     TrackingState.STOPPED -> {
@@ -269,6 +262,16 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             val anchorNode = augmentedImageMap[index]!!.second
             NodeFactory.makeNode(activity.applicationContext, flutterArCoreNode, debug) { node, throwable ->
                 debugLog( "inserted ${node?.name}")
+                val renderable = node?.renderable
+                if (renderable != null) {
+                    if (flutterArCoreNode.withShadows) {
+                        renderable.isShadowCaster = true
+                        renderable.isShadowReceiver = true
+                    } else {
+                        renderable.isShadowCaster = false
+                        renderable.isShadowReceiver = false
+                    }
+                }
                 if (node != null) {
                     node.setParent(anchorNode)
                     arSceneView.scene?.addChild(anchorNode)
