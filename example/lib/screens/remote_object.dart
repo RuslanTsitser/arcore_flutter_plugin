@@ -32,14 +32,15 @@ class _RemoteObjectState extends State<RemoteObject> {
     arCoreController?.onPlaneTap = _handleOnPlaneTap;
   }
 
+  ArCoreNode? _node;
   void _addToucano(ArCoreHitTestResult plane) {
     final toucanNode = ArCoreReferenceNode(
         name: "Toucano",
-        objectUrl:
-            "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Duck/glTF/Duck.gltf",
+        objectUrl: "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Duck/glTF/Duck.gltf",
         position: plane.pose.translation,
         rotation: plane.pose.rotation);
 
+    _node = toucanNode;
     arCoreController?.addArCoreNodeWithAnchor(toucanNode);
   }
 
@@ -49,25 +50,27 @@ class _RemoteObjectState extends State<RemoteObject> {
   }
 
   void onTapHandler(String name) {
-    print("Flutter: onNodeTap");
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        content: Row(
-          children: <Widget>[
-            Text('Remove $name?'),
-            IconButton(
-                icon: Icon(
-                  Icons.delete,
-                ),
-                onPressed: () {
-                  arCoreController?.removeNode(nodeName: name);
-                  Navigator.pop(context);
-                })
-          ],
+    if (name == _node?.name) {
+      print("Flutter: onNodeTap");
+      showDialog<void>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          content: Row(
+            children: <Widget>[
+              Text('Remove $name?'),
+              IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                  ),
+                  onPressed: () {
+                    arCoreController?.removeNode(node: _node!);
+                    Navigator.pop(context);
+                  })
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override

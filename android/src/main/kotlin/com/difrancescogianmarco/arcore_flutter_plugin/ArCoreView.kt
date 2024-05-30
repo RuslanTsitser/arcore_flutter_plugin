@@ -22,6 +22,7 @@ import com.google.ar.core.exceptions.CameraNotAvailableException
 import com.google.ar.core.exceptions.UnavailableException
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException
 import com.google.ar.sceneform.*
+import com.google.ar.sceneform.math.Vector3
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -201,7 +202,11 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             }
             "positionChanged" -> {
                 debugLog(" positionChanged")
-
+                updatePosition(call, result)
+            }
+            "scaleChanged" -> {
+                debugLog(" scaleChanged")
+                updateScale(call, result)
             }
             "getCameraPosition" -> {
                 val cameraPosition = getCameraPosition()
@@ -218,7 +223,6 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             "rotationChanged" -> {
                 debugLog(" rotationChanged")
                 updateRotation(call, result)
-
             }
             "updateMaterials" -> {
                 debugLog(" updateMaterials")
@@ -264,16 +268,6 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
                 debugLog( "inserted ${node?.name}")
 
                 if (node != null) {
-                    val renderable = node.renderable
-                    if (renderable != null) {
-                        if (flutterArCoreNode.withShadows) {
-                            renderable.isShadowCaster = true
-                            renderable.isShadowReceiver = true
-                        } else {
-                            renderable.isShadowCaster = false
-                            renderable.isShadowReceiver = false
-                        }
-                    }
                     node.setParent(anchorNode)
                     arSceneView.scene?.addChild(anchorNode)
                     result.success(null)
@@ -541,6 +535,31 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             debugLog("rotating value:  ${node.degreesPerSecond}")
             node.degreesPerSecond = degreesPerSecond.toFloat()
         }
+        result.success(null)
+    }
+
+
+    private fun updatePosition(call: MethodCall, result: MethodChannel.Result) {
+        val name = call.argument<String>("name")
+        val position = call.argument<Map<String, Double>>("position")!!
+        val node = arSceneView.scene?.findByName(name)
+        node?.localPosition = Vector3(
+            position["x"]!!.toFloat(),
+            position["y"]!!.toFloat(),
+            position["z"]!!.toFloat()
+        )
+        result.success(null)
+    }
+
+    private fun updateScale(call: MethodCall, result: MethodChannel.Result) {
+        val name = call.argument<String>("name")
+        val scale = call.argument<Map<String, Double>>("scale")
+        val node = arSceneView.scene?.findByName(name)
+        node?.localScale = Vector3(
+            scale!!["x"]!!.toFloat(),
+            scale["y"]!!.toFloat(),
+            scale["z"]!!.toFloat()
+        )
         result.success(null)
     }
 

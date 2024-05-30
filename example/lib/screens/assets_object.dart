@@ -44,6 +44,8 @@ class _AssetsObjectState extends State<AssetsObject> {
     arCoreController?.onPlaneTap = _handleOnPlaneTap;
   }
 
+  ArCoreNode? _node;
+
   void _addToucano(ArCoreHitTestResult plane) {
     if (objectSelected != null) {
       //"https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Duck/glTF/Duck.gltf"
@@ -53,12 +55,12 @@ class _AssetsObjectState extends State<AssetsObject> {
           position: plane.pose.translation,
           rotation: plane.pose.rotation);
 
+      _node = toucanoNode;
       arCoreController?.addArCoreNodeWithAnchor(toucanoNode);
     } else {
       showDialog<void>(
         context: context,
-        builder: (BuildContext context) =>
-            AlertDialog(content: Text('Select an object!')),
+        builder: (BuildContext context) => AlertDialog(content: Text('Select an object!')),
       );
     }
   }
@@ -69,25 +71,27 @@ class _AssetsObjectState extends State<AssetsObject> {
   }
 
   void onTapHandler(String name) {
-    print("Flutter: onNodeTap");
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        content: Row(
-          children: <Widget>[
-            Text('Remove $name?'),
-            IconButton(
-                icon: Icon(
-                  Icons.delete,
-                ),
-                onPressed: () {
-                  arCoreController?.removeNode(nodeName: name);
-                  Navigator.pop(context);
-                })
-          ],
+    if (name == _node?.name) {
+      print("Flutter: onNodeTap");
+      showDialog<void>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          content: Row(
+            children: <Widget>[
+              Text('Remove $name?'),
+              IconButton(
+                  icon: Icon(
+                    Icons.delete,
+                  ),
+                  onPressed: () {
+                    arCoreController?.removeNode(node: _node!);
+                    Navigator.pop(context);
+                  })
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -149,8 +153,7 @@ class _ListObjectSelectionState extends State<ListObjectSelection> {
                 ),
               ),
               child: Container(
-                color:
-                    selected == gifs[index] ? Colors.red : Colors.transparent,
+                color: selected == gifs[index] ? Colors.red : Colors.transparent,
                 padding: selected == gifs[index] ? EdgeInsets.all(8.0) : null,
                 child: Image.asset(gifs[index]),
               ),

@@ -1,6 +1,5 @@
 import 'package:arcore_flutter_plugin/src/arcore_augmented_image.dart';
 import 'package:arcore_flutter_plugin/src/arcore_rotating_node.dart';
-import 'package:arcore_flutter_plugin/src/utils/vector_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart';
 import 'package:vector_math/vector_math_64.dart';
@@ -172,6 +171,7 @@ class ArCoreController {
 
   Future<void> addArCoreNodeToAugmentedImage(ArCoreNode node, int index, {String? parentNodeName}) {
     final params = _addParentNodeNameToParams(node.toMap(), parentNodeName);
+    _addListeners(node);
     return _channel.invokeMethod('attachObjectToAugmentedImage', {'index': index, 'node': params});
   }
 
@@ -187,9 +187,9 @@ class ArCoreController {
     return _channel.invokeMethod('addArCoreNodeWithAnchor', params);
   }
 
-  Future<void> removeNode({@required String? nodeName}) {
-    assert(nodeName != null);
-    return _channel.invokeMethod('removeARCoreNode', {'nodeName': nodeName});
+  Future<void> removeNode({required ArCoreNode node}) async {
+    await _channel.invokeMethod('removeARCoreNode', {'nodeName': node.name});
+    _disposeNode(node);
   }
 
   Map<String, dynamic>? _addParentNodeNameToParams(Map<String, dynamic> geometryMap, String? parentNodeName) {
@@ -197,7 +197,18 @@ class ArCoreController {
     return geometryMap;
   }
 
+  void _disposeNode(ArCoreNode node) {
+    node.scale?.dispose();
+    node.position?.dispose();
+    node.rotation?.dispose();
+    node.shape?.materials.dispose();
+    if (node is ArCoreRotatingNode) {
+      node.degreesPerSecond.dispose();
+    }
+  }
+
   void _addListeners(ArCoreNode node) {
+    node.scale?.addListener(() => _handleScaleChanged(node));
     node.position?.addListener(() => _handlePositionChanged(node));
     node.shape?.materials.addListener(() => _updateMaterials(node));
 
@@ -206,8 +217,32 @@ class ArCoreController {
     }
   }
 
+  void _handleScaleChanged(ArCoreNode node) {
+    _channel.invokeMethod<void>(
+      'scaleChanged',
+      {
+        'name': node.name,
+        'scale': {
+          'x': node.scale?.value.x,
+          'y': node.scale?.value.y,
+          'z': node.scale?.value.z,
+        },
+      },
+    );
+  }
+
   void _handlePositionChanged(ArCoreNode node) {
-    _channel.invokeMethod<void>('positionChanged', _getHandlerParams(node, convertVector3ToMap(node.position?.value)));
+    _channel.invokeMethod<void>(
+      'positionChanged',
+      {
+        'name': node.name,
+        'position': {
+          'x': node.position?.value.x,
+          'y': node.position?.value.y,
+          'z': node.position?.value.z,
+        },
+      },
+    );
   }
 
   void _handleRotationChanged(ArCoreRotatingNode node) {

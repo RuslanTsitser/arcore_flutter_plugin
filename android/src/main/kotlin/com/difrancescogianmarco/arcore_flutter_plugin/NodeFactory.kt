@@ -19,6 +19,13 @@ class NodeFactory {
             val node = flutterNode.buildNode()
             RenderableCustomFactory.makeRenderable(context, flutterNode) { renderable, t ->
                 if (renderable != null) {
+                    if (flutterNode.withShadows) {
+                        renderable.isShadowCaster = true
+                        renderable.isShadowReceiver = true
+                    } else {
+                        renderable.isShadowCaster = false
+                        renderable.isShadowReceiver = false
+                    }
                     node.renderable = renderable
                     handler(node, null)
                 }else{

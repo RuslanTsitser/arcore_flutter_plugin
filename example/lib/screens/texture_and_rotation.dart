@@ -5,12 +5,10 @@ import 'package:vector_math/vector_math_64.dart' as vector;
 
 class ObjectWithTextureAndRotation extends StatefulWidget {
   @override
-  _ObjectWithTextureAndRotationState createState() =>
-      _ObjectWithTextureAndRotationState();
+  _ObjectWithTextureAndRotationState createState() => _ObjectWithTextureAndRotationState();
 }
 
-class _ObjectWithTextureAndRotationState
-    extends State<ObjectWithTextureAndRotation> {
+class _ObjectWithTextureAndRotationState extends State<ObjectWithTextureAndRotation> {
   ArCoreController? arCoreController;
 
   ArCoreRotatingNode? node;
@@ -19,6 +17,10 @@ class _ObjectWithTextureAndRotationState
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
+        floatingActionButton: FloatingActionButton(
+          onPressed: _onPressed,
+          child: Icon(Icons.delete),
+        ),
         appBar: AppBar(
           title: const Text('Object with rotation'),
         ),
@@ -39,14 +41,23 @@ class _ObjectWithTextureAndRotationState
     );
   }
 
+  Future<void> _onPressed() async {
+    final zCoordinate = node?.position?.value.z;
+    node?.position?.value = vector.Vector3(0, 0, zCoordinate! + 0.5);
+    print("zCoordinate: $zCoordinate");
+    setState(() {});
+  }
+
   void _onArCoreViewCreated(ArCoreController controller) {
     arCoreController = controller;
     _addSphere();
   }
 
   Future _addSphere() async {
-    final ByteData textureBytes = await rootBundle.load('assets/italia.png');
-
+    // final ByteData textureBytes = await rootBundle.load('assets/italia.png');
+    final bundle = NetworkAssetBundle(Uri.parse(
+        'https://parsefiles.back4app.com/gy5DcBsmJFEhxkEKeKlArNJaLJ39WGVyZXHSKXPD/d5d8d0ebc50e85e7eb642d0a6094ca8a_50.png'));
+    final textureBytes = await bundle.load('');
     final material = ArCoreMaterial(
       color: Color.fromARGB(120, 66, 134, 244),
       textureBytes: textureBytes.buffer.asUint8List(),
@@ -85,10 +96,7 @@ class RotationSlider extends StatefulWidget {
   final double degreesPerSecondInitialValue;
   final ValueChanged<double>? onDegreesPerSecondChange;
 
-  const RotationSlider(
-      {Key? key,
-      this.degreesPerSecondInitialValue = 0.0,
-      this.onDegreesPerSecondChange})
+  const RotationSlider({Key? key, this.degreesPerSecondInitialValue = 0.0, this.onDegreesPerSecondChange})
       : super(key: key);
 
   @override
