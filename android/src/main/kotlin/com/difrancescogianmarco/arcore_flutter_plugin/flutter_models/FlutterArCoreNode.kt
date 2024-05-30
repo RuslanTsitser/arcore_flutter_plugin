@@ -18,11 +18,11 @@ class FlutterArCoreNode(map: HashMap<*, *>) {
     val shape: FlutterArCoreShape? = getShape(map["shape"] as? HashMap<String, *>)
     val position: Vector3 = parseVector3(map["position"] as? HashMap<String, *>) ?: Vector3()
     val scale: Vector3 = parseVector3(map["scale"] as? HashMap<String, *>)
-            ?: Vector3(1.0F, 1.0F, 1.0F)
+        ?: Vector3(1.0F, 1.0F, 1.0F)
     val rotation: Quaternion = parseQuaternion(map["rotation"] as? HashMap<String, Double>)
-            ?: Quaternion()
+        ?: Quaternion()
     val degreesPerSecond: Float? = getDegreesPerSecond((map["degreesPerSecond"] as? Double))
-    val parentNodeName: String? = map["parentNodeName"] as? String
+    var parentNodeName: String? = map["parentNodeName"] as? String
     val withShadows: Boolean = map["withShadows"] as? Boolean ?: true
 
     val children: ArrayList<FlutterArCoreNode> = getChildrenFromMap(map["children"] as ArrayList<HashMap<String, *>>)
