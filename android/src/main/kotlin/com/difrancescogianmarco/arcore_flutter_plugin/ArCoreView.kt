@@ -262,19 +262,21 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
             val anchorNode = augmentedImageMap[index]!!.second
             NodeFactory.makeNode(activity.applicationContext, flutterArCoreNode, debug) { node, throwable ->
                 debugLog( "inserted ${node?.name}")
-                val renderable = node?.renderable
-                if (renderable != null) {
-                    if (flutterArCoreNode.withShadows) {
-                        renderable.isShadowCaster = true
-                        renderable.isShadowReceiver = true
-                    } else {
-                        renderable.isShadowCaster = false
-                        renderable.isShadowReceiver = false
-                    }
-                }
+
                 if (node != null) {
+                    val renderable = node.renderable
+                    if (renderable != null) {
+                        if (flutterArCoreNode.withShadows) {
+                            renderable.isShadowCaster = true
+                            renderable.isShadowReceiver = true
+                        } else {
+                            renderable.isShadowCaster = false
+                            renderable.isShadowReceiver = false
+                        }
+                    }
                     node.setParent(anchorNode)
                     arSceneView.scene?.addChild(anchorNode)
+                    arSceneView.scene.addChild(node)
                     result.success(null)
                 } else if (throwable != null) {
                     result.error("attachObjectToAugmentedImage error", throwable.localizedMessage, null)
