@@ -224,9 +224,10 @@ class ArCoreController {
     return values;
   }
 
-  Future<void> loadSingleAugmentedImage({required Uint8List bytes}) {
+  Future<void> loadSingleAugmentedImage({required Uint8List bytes, double? imageWidth}) {
     return _channel.invokeMethod('load_single_image_on_db', {
       'bytes': bytes,
+      if (imageWidth != null) 'imageWidth': imageWidth,
     });
   }
 

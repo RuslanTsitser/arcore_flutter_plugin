@@ -140,9 +140,10 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
                 }
                 "load_single_image_on_db" -> {
                     debugLog( "load_single_image_on_db")
-                    val map = call.arguments as HashMap<String, Any>
+                    val map = call.arguments as HashMap<*, *>
                     val singleImageBytes = map["bytes"] as? ByteArray
-                    setupSession(singleImageBytes, true)
+                    val imageWidth = map["imageWidth"] as? Float
+                    setupSession(singleImageBytes, true, imageWidth)
                 }
                 "load_multiple_images_on_db" -> {
                     debugLog( "load_multiple_image_on_db")
@@ -260,7 +261,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
         }
     }
 
-    private fun setupSession(bytes: ByteArray?, useSingleImage: Boolean) {
+    private fun setupSession(bytes: ByteArray?, useSingleImage: Boolean, imageWidth: Float? = null) {
         debugLog( "setupSession()")
         try {
             val session = arSceneView?.session ?: return
@@ -269,7 +270,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
             config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
             bytes?.let {
                 if (useSingleImage) {
-                    if (!addImageToAugmentedImageDatabase(config, bytes)) {
+                    if (!addImageToAugmentedImageDatabase(config, bytes, imageWidth)) {
                         throw Exception("Could not setup augmented image database")
                     }
                 } else {
@@ -327,12 +328,16 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
         }
     }
 
-    private fun addImageToAugmentedImageDatabase(config: Config, bytes: ByteArray): Boolean {
+    private fun addImageToAugmentedImageDatabase(config: Config, bytes: ByteArray, imageWidth : Float?): Boolean {
         debugLog( "addImageToAugmentedImageDatabase")
         try {
             val augmentedImageBitmap = loadAugmentedImageBitmap(bytes) ?: return false
             val augmentedImageDatabase = AugmentedImageDatabase(arSceneView?.session)
-            augmentedImageDatabase.addImage("image_name", augmentedImageBitmap)
+            if (imageWidth == null) {
+                augmentedImageDatabase.addImage("image_name", augmentedImageBitmap)
+            } else {
+                augmentedImageDatabase.addImage("image_name", augmentedImageBitmap, imageWidth)
+            }
             config.augmentedImageDatabase = augmentedImageDatabase
             return true
         } catch (ex:Exception) {
