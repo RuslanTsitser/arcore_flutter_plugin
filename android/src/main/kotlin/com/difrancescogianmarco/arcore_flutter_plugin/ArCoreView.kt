@@ -411,6 +411,15 @@ class ArCoreView(val activity: Activity, context: Context, messenger: BinaryMess
 
     private fun addNodeWithAnchor(flutterArCoreNode: FlutterArCoreNode, result: MethodChannel.Result) {
         RenderableCustomFactory.makeRenderable(activity.applicationContext, flutterArCoreNode) { renderable, t ->
+            if (renderable != null) {
+                if (flutterArCoreNode.withShadows) {
+                    renderable.isShadowCaster = true
+                    renderable.isShadowReceiver = true
+                } else {
+                    renderable.isShadowCaster = false
+                    renderable.isShadowReceiver = false
+                }
+            }
             if (t != null) {
                 result.error("Make Renderable Error", t.localizedMessage, null)
                 return@makeRenderable

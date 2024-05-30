@@ -1,12 +1,13 @@
 import 'package:arcore_flutter_plugin/src/arcore_image.dart';
 import 'package:arcore_flutter_plugin/src/shape/arcore_shape.dart';
-import 'package:arcore_flutter_plugin/src/utils/random_string.dart'
-    as random_string;
+import 'package:arcore_flutter_plugin/src/utils/random_string.dart' as random_string;
 import 'package:arcore_flutter_plugin/src/utils/vector_utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-class ArCoreNode {
+import 'disposable.dart';
+
+class ArCoreNode implements Disposable {
   ArCoreNode({
     this.shape,
     this.image,
@@ -15,6 +16,7 @@ class ArCoreNode {
     Vector3? scale,
     Vector4? rotation,
     this.children = const [],
+    this.withShadows,
   })  : name = name ?? random_string.randomString(),
         position = position != null ? ValueNotifier(position) : null,
         scale = scale != null ? ValueNotifier(scale) : null,
@@ -35,6 +37,8 @@ class ArCoreNode {
 
   final ArCoreImage? image;
 
+  final bool? withShadows;
+
   Map<String, dynamic> toMap() => <String, dynamic>{
         'dartType': runtimeType.toString(),
         'shape': shape?.toMap(),
@@ -43,7 +47,14 @@ class ArCoreNode {
         'rotation': convertVector4ToMap(rotation?.value),
         'name': name,
         'image': image?.toMap(),
-        'children':
-            this.children?.map((arCoreNode) => arCoreNode.toMap()).toList(),
+        'withShadows': withShadows,
+        'children': this.children?.map((arCoreNode) => arCoreNode.toMap()).toList(),
       }..removeWhere((String k, dynamic v) => v == null);
+
+  @override
+  void dispose() {
+    position?.dispose();
+    scale?.dispose();
+    rotation?.dispose();
+  }
 }

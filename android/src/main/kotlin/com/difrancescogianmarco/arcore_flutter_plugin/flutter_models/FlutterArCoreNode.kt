@@ -16,13 +16,14 @@ class FlutterArCoreNode(map: HashMap<*, *>) {
     val objectUrl: String? = map["objectUrl"] as? String
     val object3DFileName: String? = map["object3DFileName"] as? String
     val shape: FlutterArCoreShape? = getShape(map["shape"] as? HashMap<String, *>)
-    val position: Vector3 = parseVector3(map["position"] as? HashMap<String, *>) ?: Vector3()
-    val scale: Vector3 = parseVector3(map["scale"] as? HashMap<String, *>)
+    private val position: Vector3 = parseVector3(map["position"] as? HashMap<String, *>) ?: Vector3()
+    private val scale: Vector3 = parseVector3(map["scale"] as? HashMap<String, *>)
             ?: Vector3(1.0F, 1.0F, 1.0F)
-    val rotation: Quaternion = parseQuaternion(map["rotation"] as? HashMap<String, Double>)
+    private val rotation: Quaternion = parseQuaternion(map["rotation"] as? HashMap<String, Double>)
             ?: Quaternion()
-    val degreesPerSecond: Float? = getDegreesPerSecond((map["degreesPerSecond"] as? Double))
-    var parentNodeName: String? = map["parentNodeName"] as? String
+    private val degreesPerSecond: Float? = getDegreesPerSecond((map["degreesPerSecond"] as? Double))
+    private val parentNodeName: String? = map["parentNodeName"] as? String
+    val withShadows: Boolean = map["withShadows"] as? Boolean ?: true
 
     val children: ArrayList<FlutterArCoreNode> = getChildrenFromMap(map["children"] as ArrayList<HashMap<String, *>>)
 
@@ -31,11 +32,10 @@ class FlutterArCoreNode(map: HashMap<*, *>) {
     }
 
     fun buildNode(): Node {
-        lateinit var node: Node
-        if (degreesPerSecond != null) {
-            node = RotatingNode(degreesPerSecond, true, 0.0f)
+        val node: Node = if (degreesPerSecond != null) {
+            RotatingNode(degreesPerSecond, true, 0.0f)
         } else {
-            node = Node()
+            Node()
         }
 
         node.name = name
@@ -88,6 +88,7 @@ class FlutterArCoreNode(map: HashMap<*, *>) {
                 "position: $position\n" +
                 "scale: $scale\n" +
                 "rotation: $rotation\n" +
+                "withShadows: $withShadows\n" +
                 "parentNodeName: $parentNodeName"
     }
 
