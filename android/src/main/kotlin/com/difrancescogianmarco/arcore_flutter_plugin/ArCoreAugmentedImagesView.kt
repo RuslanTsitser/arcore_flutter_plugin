@@ -268,6 +268,7 @@ class ArCoreAugmentedImagesView(activity: Activity, context: Context, messenger:
             val config = Config(session)
             config.focusMode = Config.FocusMode.AUTO
             config.updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
+            config.lightEstimationMode = Config.LightEstimationMode.DISABLED
             bytes?.let {
                 if (useSingleImage) {
                     if (!addImageToAugmentedImageDatabase(config, bytes, imageWidth)) {
